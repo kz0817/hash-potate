@@ -10,7 +10,7 @@ case class FileFinder(dir: String, calculator: ActorRef) {
       calculator ! path
   }
 
-  def run() = findFiles(new File(dir))
+  def run = findFiles(new File(dir)) 
 }
 
 class Calculator extends Actor {
@@ -21,11 +21,11 @@ class Calculator extends Actor {
 
 case class HashPotate(dir: String) {
 
-  def run() {
+  def run = {
     val system = ActorSystem("actor-system")
     val calculator = system.actorOf(Props[Calculator], "calculator")
     val fileFinder = FileFinder(dir, calculator)
-    fileFinder.run()
+    fileFinder.run
 
     system.terminate
   }
@@ -40,6 +40,6 @@ object Main {
     val dir = args(0)
     println(s"Targt dir: $dir")
     val hashPotate = HashPotate(dir)
-    hashPotate.run()
+    hashPotate.run
   }
 }
