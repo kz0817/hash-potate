@@ -2,15 +2,15 @@ import java.io._
 
 case class FileFinder(dir: String) {
 
+  private def findFiles(path: File) {
+    if (path.isDirectory)
+      path.listFiles foreach findFiles
+    else
+      println(path)
+  }
+
   def run() {
-    /*
-    new File(dir).listFiles.map {
-      println(_)
-    }
-    */
-    new File(dir).listFiles.flatMap {
-      println(_)
-    }
+    findFiles(new File(dir))
   }
 }
 
@@ -25,7 +25,7 @@ case class HashPotate(dir: String) {
 object Main {
   def main(args: Array[String]) {
     if (args.length < 1) {
-      sys.error("You need a directory")
+      System.err.println("You need a directory")
       sys.exit(-1)
     }
     val dir = args(0)
