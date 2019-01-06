@@ -3,7 +3,14 @@ import java.io._
 case class FileFinder(dir: String) {
 
   def run() {
-    new File(dir).listFiles.foreach(println)
+    /*
+    new File(dir).listFiles.map {
+      println(_)
+    }
+    */
+    new File(dir).listFiles.flatMap {
+      println(_)
+    }
   }
 }
 
