@@ -1,6 +1,6 @@
 import akka.actor.{ActorSystem, Actor, ActorRef, Props}
 import java.io._
-import java.security.MessageDigest
+import java.security.{MessageDigest, DigestInputStream}
 
 case class FileFinder(dir: String, calculator: ActorRef) {
 
@@ -16,9 +16,23 @@ case class FileFinder(dir: String, calculator: ActorRef) {
 
 class Calculator extends Actor {
 
+  /*
   def calcMD5(text: String): String = {
     val md = MessageDigest.getInstance("MD5")
     md.digest(text.getBytes).map("%02x".format(_)).mkString
+  }*/
+
+  def calcMD5(text: String): String = {
+    val BUF_SIZE = 0x10000
+    val buffer = new Array[Byte](BUF_SIZE)
+    val digest = MessageDigest.getInstance("MD5")
+    val dis = new DigestInputStream(new FileInputStream(new File(path)), digest)
+    try {
+      while (dis.read(buffer) != -1) {}
+    } finally {
+      dis.close()
+    }
+    digest.digest
   }
 
   def show(path: String) {
