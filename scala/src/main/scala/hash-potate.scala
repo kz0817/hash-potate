@@ -10,9 +10,7 @@ case class FileFinder(dir: String, calculator: ActorRef) {
       calculator ! path
   }
 
-  def run() {
-    findFiles(new File(dir))
-  }
+  def run() = findFiles(new File(dir))
 }
 
 class Calculator extends Actor {
