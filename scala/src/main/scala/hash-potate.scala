@@ -1,12 +1,13 @@
+import akka.actor.{ActorSystem, Actor, ActorRef, Props}
 import java.io._
 
-case class FileFinder(dir: String) {
+case class FileFinder(dir: String, calculator: ActorRef) {
 
-  private def findFiles(path: File) {
+  def findFiles(path: File) {
     if (path.isDirectory)
       path.listFiles foreach findFiles
     else
-      println(path)
+      calculator ! path
   }
 
   def run() {
@@ -14,11 +15,21 @@ case class FileFinder(dir: String) {
   }
 }
 
+class Calculator extends Actor {
+  def receive = {
+    case path => println(path)
+  }
+}
+
 case class HashPotate(dir: String) {
-  val fileFinder = FileFinder(dir)
 
   def run() {
+    val system = ActorSystem("actor-system")
+    val calculator = system.actorOf(Props[Calculator], "calculator")
+    val fileFinder = FileFinder(dir, calculator)
     fileFinder.run()
+
+    system.terminate
   }
 }
 
