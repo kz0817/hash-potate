@@ -15,7 +15,7 @@ case class FileFinder(dir: String, calculator: ActorRef) {
 
   def run = {
     findFiles(new File(dir))
-    calculator ! ""
+    calculator ! None
   }
 }
 
@@ -39,7 +39,7 @@ class Calculator extends Actor {
   }
 
   def receive = {
-    case "" => context.system.terminate
+    case None => context.system.terminate
     case path: Any => show(path.toString)
   }
 }
