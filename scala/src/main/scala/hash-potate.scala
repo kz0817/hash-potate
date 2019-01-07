@@ -1,4 +1,6 @@
 import akka.actor.{ActorSystem, Actor, ActorRef, Props}
+import scala.concurrent._
+import scala.concurrent.duration.Duration
 import java.io._
 import java.security.{MessageDigest, DigestInputStream}
 
@@ -11,7 +13,10 @@ case class FileFinder(dir: String, calculator: ActorRef) {
       calculator ! path
   }
 
-  def run = findFiles(new File(dir)) 
+  def run = {
+    findFiles(new File(dir))
+    calculator ! ""
+  }
 }
 
 class Calculator extends Actor {
@@ -34,7 +39,8 @@ class Calculator extends Actor {
   }
 
   def receive = {
-    case path => show(path.toString)
+    case "" => context.system.terminate
+    case path: Any => show(path.toString)
   }
 }
 
@@ -45,8 +51,7 @@ case class HashPotate(dir: String) {
     val calculator = system.actorOf(Props[Calculator], "calculator")
     val fileFinder = FileFinder(dir, calculator)
     fileFinder.run
-
-    system.terminate
+    Await.ready(system.whenTerminated, Duration.Inf)
   }
 }
 
