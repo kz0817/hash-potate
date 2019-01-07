@@ -15,14 +15,7 @@ case class FileFinder(dir: String, calculator: ActorRef) {
 }
 
 class Calculator extends Actor {
-
-  /*
-  def calcMD5(text: String): String = {
-    val md = MessageDigest.getInstance("MD5")
-    md.digest(text.getBytes).map("%02x".format(_)).mkString
-  }*/
-
-  def calcMD5(text: String): String = {
+  def calcMD5(path: String): String = {
     val BUF_SIZE = 0x10000
     val buffer = new Array[Byte](BUF_SIZE)
     val digest = MessageDigest.getInstance("MD5")
@@ -32,7 +25,7 @@ class Calculator extends Actor {
     } finally {
       dis.close()
     }
-    digest.digest
+    digest.digest.map{ "%02x".format(_) }.mkString
   }
 
   def show(path: String) {
