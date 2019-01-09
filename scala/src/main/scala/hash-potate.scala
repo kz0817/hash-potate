@@ -7,6 +7,11 @@ import java.security.{MessageDigest, DigestInputStream}
 case class FileFinder(dir: String, calculator: ActorRef) {
 
   def findFiles(path: File) {
+    if (!path.canRead()) {
+      println(s"Non-readable: ${path}")
+      return
+    }
+
     if (path.isDirectory)
       path.listFiles foreach findFiles
     else
