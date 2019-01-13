@@ -49,26 +49,45 @@ class Calculator extends Actor {
   }
 }
 
-case class HashPotate(dir: String) {
+case class Args(args: Array[String]) {
+  var numCalculators = 1
+  var targetDir = ""
+
+  var parser = (arg: String) => println(s"Unknown option: $arg")
+  args foreach {
+    case "-d" => parser = (arg: String) => targetDir = arg
+    case "-c" => parser = (arg: String) => numCalculators = arg.toInt
+    case a => parser(a)
+  }
+
+  def unary_! = targetDir == ""
+
+  def show = {
+    println(s"Targt directory : $targetDir")
+    println(s"# of calculators: $numCalculators")
+  }
+}
+
+case class HashPotate(args: Args) {
 
   def run = {
     val system = ActorSystem("actor-system")
     val calculator = system.actorOf(Props[Calculator], "calculator")
-    val fileFinder = FileFinder(dir, calculator)
+    val fileFinder = FileFinder(args.targetDir, calculator)
     fileFinder.run
     Await.ready(system.whenTerminated, Duration.Inf)
   }
 }
 
 object Main {
-  def main(args: Array[String]) {
-    if (args.length < 1) {
+  def main(_args: Array[String]) {
+    val args = Args(_args)
+    if (!args) {
       System.err.println("You need a directory")
       sys.exit(-1)
     }
-    val dir = args(0)
-    println(s"Targt dir: $dir")
-    val hashPotate = HashPotate(dir)
+    args.show
+    val hashPotate = HashPotate(args)
     hashPotate.run
   }
 }
