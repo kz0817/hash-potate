@@ -6,7 +6,7 @@ import java.security.{MessageDigest, DigestInputStream}
 
 case class FileFinder(dir: String, calculator: ActorRef) {
 
-  def findFiles(path: File) {
+  private def findFiles(path: File) {
     if (!path.canRead()) {
       println(s"Non-readable: ${path}")
       return
@@ -24,8 +24,8 @@ case class FileFinder(dir: String, calculator: ActorRef) {
   }
 }
 
-class Calculator extends Actor {
-  def calcMD5(path: File): String = {
+class CalcWorker(workerId: Int) extends Actor {
+  private def calcMD5(path: File): String = {
     val BUF_SIZE = 0x10000
     val buffer = new Array[Byte](BUF_SIZE)
     val digest = MessageDigest.getInstance("MD5")
@@ -38,14 +38,46 @@ class Calculator extends Actor {
     digest.digest.map{ "%02x".format(_) }.mkString
   }
 
-  def show(path: File) {
+  private def show(path: File) {
     val md5 = calcMD5(path)
     println(s"$md5  $path")
   }
 
   def receive = {
-    case None => context.system.terminate
-    case path: Any => show(path.asInstanceOf[File])
+    case path: Any =>
+      show(path.asInstanceOf[File])
+      sender ! workerId
+  }
+}
+
+class Calculator(numWorkers: Int) extends Actor {
+  private val workers = for (i <- 1 to numWorkers) yield {
+    context.system.actorOf(Props(classOf[CalcWorker], i), s"worker$i")
+  }
+
+  private var idx = 0
+  private var terminateFlag = false
+  private var numWaitReply = 0
+
+  private def terminateIfAllDone: Unit = {
+    if (!terminateFlag)
+      return
+    if (numWaitReply > 0)
+      return
+    context.system.terminate
+  }
+
+  def receive = {
+    case None =>
+      terminateFlag = true
+      terminateIfAllDone
+    case workerId: Int =>
+      numWaitReply = numWaitReply - 1
+      terminateIfAllDone
+    case path: Any =>
+      workers(idx) ! path.asInstanceOf[File]
+      idx = (idx + 1) % numWorkers
+      numWaitReply = numWaitReply + 1
   }
 }
 
@@ -72,7 +104,8 @@ case class HashPotate(args: Args) {
 
   def run = {
     val system = ActorSystem("actor-system")
-    val calculator = system.actorOf(Props[Calculator], "calculator")
+    val calcProp = Props(classOf[Calculator], args.numCalculators)
+    val calculator = system.actorOf(calcProp, "calculator")
     val fileFinder = FileFinder(args.targetDir, calculator)
     fileFinder.run
     Await.ready(system.whenTerminated, Duration.Inf)
